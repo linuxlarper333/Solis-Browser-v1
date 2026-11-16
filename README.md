@@ -25,7 +25,7 @@
 | **Takip Kodları** | **Arındırılmış** | Mevcut |
 
 ### 🚀 Nasıl Kullanılır ve İncelenir?
-* **Kaynak Kodu İnceleme:** Depodaki `solis-browser-kod.txt` dosyasına tıklayarak tüm HTML, CSS ve JavaScript kaynak kodlarını açık kaynak olarak inceleyebilirsiniz.
+* **Kaynak Kodu İnceleme:** Depodaki `Source-Code` dosyasına tıklayarak tüm HTML, CSS ve JavaScript kaynak kodlarını açık kaynak olarak inceleyebilirsiniz.
 * **Tarayıcıda Çalıştırma:** `index.html` dosyasını cihazınıza indirip herhangi bir tarayıcıda açabilir veya canlı demo bağlantısını kullanabilirsiniz.
 
 ---

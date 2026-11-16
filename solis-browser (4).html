@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Solis Browser</title>
+<style>
+:root{
+  --strip:#1c1b22; --tab:#42414d; --bar:#2b2a33; --field:#1c1b22; --page:#1c1b22;
+  --tile:#42414d; --search:#42414d; --text:#fbfbfe; --muted:#9e9ea6; --hover:rgba(255,255,255,.1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--page);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;overflow:hidden}
+.win{display:flex;flex-direction:column;height:100%;padding-top:env(safe-area-inset-top,0px);background:var(--strip)}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+svg{display:block}
+
+/* Tab strip */
+.tabs{display:flex;align-items:center;height:48px;padding:0 12px;gap:6px;background:var(--strip)}
+.lights{display:flex;gap:8px;margin-right:48px;flex:none}
+.lights i{width:13px;height:13px;border-radius:50%;display:block}
+.lights i:nth-child(1){background:#ff5f57}.lights i:nth-child(2){background:#febc2e}.lights i:nth-child(3){background:#28c840}
+.tab{display:flex;align-items:center;gap:10px;height:36px;width:230px;min-width:0;padding:0 12px;border-radius:6px;font-size:15px;color:#e8e8ee;cursor:pointer;flex:0 1 230px}
+.tab span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tab.active{background:var(--tab);color:#fff}
+.tab .fav{width:16px;height:16px;flex:none;display:grid;place-items:center;font:600 14px Georgia,serif;color:#cfcfd6}
+.tab .x{width:20px;height:20px;border-radius:4px;display:grid;place-items:center;flex:none;color:#d7d7de}
+.tab .x:hover{background:var(--hover)}
+.newtab{width:32px;height:32px;border-radius:6px;display:grid;place-items:center;flex:none}
+.newtab:hover,.ib:hover{background:var(--hover)}
+.spacer{flex:1}
+.list{width:32px;height:32px;display:grid;place-items:center;flex:none}
+
+.tablist{display:flex;gap:6px;min-width:0;overflow-x:auto;scrollbar-width:none;flex:0 1 auto}
+.tablist::-webkit-scrollbar{display:none}
+.tab{min-width:90px}
+.tab:not(.active):hover{background:rgba(255,255,255,.08)}
+.welcome{display:none;flex-direction:column;align-items:center;gap:12px;margin-top:clamp(70px,16vh,110px);text-align:center}
+.welcome svg{width:64px;height:64px}
+.welcome h2{font-size:24px;font-weight:500}
+.welcome p{font-size:14px;color:var(--muted)}
+.welcome button{margin-top:6px;height:34px;padding:0 16px;border-radius:6px;background:#42414d;font-size:13px}
+.welcome button:hover{background:#52515d}
+.page.is-welcome .welcome{display:flex}
+.page.is-welcome .hero,.page.is-welcome .search,.page.is-welcome .tiles,.page.is-welcome .custom{display:none}
+
+/* Toolbar */
+.toolbar{display:flex;align-items:center;gap:6px;height:44px;padding:0 12px;background:var(--bar)}
+.ib{width:32px;height:32px;border-radius:6px;display:grid;place-items:center;flex:none;color:#e6e6ec}
+.ib.dim{color:#6f6e78}
+.url{flex:1;min-width:0;display:flex;align-items:center;gap:10px;height:36px;margin:0 6px;padding:0 12px;border-radius:6px;background:var(--field);font-size:17px;color:#9a9aa3;max-width:none}
+.url input{flex:1;min-width:0;background:none;border:0;outline:0;color:#9a9aa3;font:inherit}
+.url input:focus{color:#fff}
+.url:focus-within{box-shadow:0 0 0 2px #7aa7ff}
+.vpn{display:flex;align-items:center;gap:7px;height:30px;padding:0 10px;border-radius:5px;background:#42414d;font-size:16px;font-weight:500;flex:none}
+.vpn .dot{width:14px;height:14px;border-radius:50%;background:#cfcfd6;display:grid;place-items:center}
+.vpn .dot:after{content:"";width:0;height:0;border-left:5px solid #42414d;border-top:3.5px solid transparent;border-bottom:3.5px solid transparent;margin-left:1px}
+.vpn.on .dot{background:#ff9a1f}.vpn.on .dot:after{border-left-color:#1c1b22}
+
+/* Page */
+.page{position:relative;flex:1;background:var(--page);overflow:auto;display:flex;flex-direction:column;align-items:center;padding:0 20px 60px}
+.hero{margin-top:clamp(70px,16vh,86px);display:flex;align-items:center;gap:20px}
+.hero svg{width:56px;height:56px}
+.hero h1{font-size:25px;font-weight:500;letter-spacing:-.2px}
+.search{margin-top:34px;width:min(388px,100%);height:30px;display:flex;align-items:center;gap:8px;padding:0 9px;border-radius:5px;background:var(--search)}
+.search input{flex:1;min-width:0;background:none;border:0;outline:0;color:#fff;font:inherit;font-size:11px}
+.search input::placeholder{color:#a9a9b1}
+.search:focus-within{box-shadow:0 0 0 2px #7aa7ff}
+.tiles{margin-top:34px;display:flex;flex-wrap:wrap;justify-content:center;gap:12px 12px;max-width:540px}
+.tile{color:var(--text);width:38px;text-align:center;text-decoration:none;color:#e6e6ec;display:block}
+.tile .ic{width:38px;height:38px;border-radius:8px;background:var(--tile);display:grid;place-items:center;transition:background .15s}
+.tile:hover .ic{background:#52515d}
+.tile .ic>*{width:22px;height:22px;border-radius:4px;display:grid;place-items:center;font-weight:700}
+.tile small{display:block;margin-top:5px;font-size:8.5px;line-height:1.15;white-space:nowrap;margin-left:-8px;margin-right:-8px}
+.tile em{display:block;font-style:normal;font-size:6.5px;color:#9a9aa3;margin:1px -8px 0}
+.custom{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;height:20px;padding:0 10px;border:1px solid #3d3c46;border-radius:10px;background:#25242c;font-size:9px;color:#d7d7de}
+.custom:hover{background:#2f2e38}
+
+/* Mobile */
+@media (max-width:720px){
+  .lights,.list,.hide-m{display:none}
+  .tabs{height:44px;padding:0 8px}
+  .tab{flex:0 0 150px;width:150px}
+  .toolbar{padding:0 6px;gap:2px}
+  .toolbar .ib.opt{display:none}
+  .url{font-size:15px;margin:0 4px;height:34px}
+  .vpn{font-size:14px;padding:0 8px}
+  .hero{gap:14px}
+  .hero h1{font-size:23px}
+  .hero svg{width:50px;height:50px}
+  .tiles{gap:18px 14px;max-width:340px}
+  .tile{width:56px}
+  .tile .ic{width:56px;height:56px;border-radius:11px}
+  .tile .ic>*{width:30px;height:30px}
+  .tile small{font-size:11px;margin-top:7px}
+  .tile em{font-size:8.5px}
+  .search{height:38px;width:100%;max-width:420px}
+  .search input{font-size:14px}
+  .custom{height:26px;font-size:11px;bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+}
+@media (max-width:360px){.vpn span{display:none}.hero h1{font-size:20px}}
+/* Extras */
+.page{background:var(--pagebg,var(--page))}
+.search{position:relative}
+.sug{position:absolute;left:0;right:0;top:34px;z-index:20;background:var(--tab);border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.35);padding:4px;display:none}
+.sug.open{display:block}
+.sug div{display:flex;gap:8px;align-items:center;padding:7px 8px;font-size:12px;border-radius:4px;cursor:pointer;color:var(--text)}
+.sug div svg{flex:none;opacity:.6}
+.sug div.sel,.sug div:hover{background:var(--hover)}
+.info{position:absolute;top:14px;right:18px;display:flex;align-items:center;gap:14px;font-size:12px;color:var(--muted);text-align:right}
+.info b{display:block;font-size:22px;font-weight:500;color:var(--text);line-height:1.1}
+.info button{font-size:12px;color:var(--muted);padding:5px 8px;border-radius:5px}
+.info button:hover{background:var(--hover)}
+.page.is-welcome .info,.page.hide-info .info{display:none}
+.page.hide-tiles .tiles{display:none}
+.pop{position:fixed;z-index:50;top:calc(env(safe-area-inset-top,0px) + 92px);right:12px;width:290px;max-width:calc(100vw - 24px);background:var(--bar);color:var(--text);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.45);padding:8px;display:none;border:1px solid rgba(128,128,140,.25)}
+.pop.open{display:block}
+.pop.ctx{top:0;right:auto;width:170px}
+.pop h3{font-size:14px;font-weight:600;padding:6px 8px}
+.pop p,.modal p{font-size:12px;color:var(--muted);padding:2px 8px 6px;line-height:1.4}
+.mi{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 10px;border-radius:6px;font-size:14px}
+.mi:hover{background:var(--hover)}
+.sep{height:1px;background:rgba(128,128,140,.25);margin:4px 0}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px;font-size:14px}
+.row small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.sw{position:relative;width:38px;height:22px;border-radius:11px;background:#6f6e78;flex:none;transition:background .15s}
+.sw:after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s}
+.sw.on{background:#f5821f}.sw.on:after{transform:translateX(16px)}
+.pop select,.modal input,.modal select{width:100%;height:34px;border-radius:6px;border:1px solid rgba(128,128,140,.35);background:var(--field);color:var(--text);padding:0 10px;font:inherit;font-size:14px}
+.pop select{margin:0 0 4px}
+.pop .selwrap{padding:0 8px 4px}
+.avatar{width:36px;height:36px;border-radius:50%;background:#f5821f;color:#1c1b22;display:grid;place-items:center;font-weight:700;flex:none}
+.ov{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px}
+.ov.open{display:flex}
+.modal{background:var(--bar);color:var(--text);border-radius:12px;width:min(420px,100%);max-height:86vh;overflow:auto;padding:18px;border:1px solid rgba(128,128,140,.25)}
+.modal h2{font-size:17px;font-weight:600;margin-bottom:8px}
+.modal label{display:block;font-size:12px;color:var(--muted);margin:12px 0 5px}
+.btns{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}
+.btn{height:34px;padding:0 14px;border-radius:6px;background:var(--tile);font-size:13px;color:var(--text)}
+.btn:hover{filter:brightness(1.15)}
+.btn.pri{background:#f5821f;color:#1c1b22;font-weight:600}
+.swatches{display:flex;gap:10px;flex-wrap:wrap}
+.swatches button{width:32px;height:32px;border-radius:50%;border:2px solid transparent;outline:1px solid rgba(128,128,140,.4)}
+.swatches button.sel{border-color:#f5821f}
+.items a,.items .li{display:block;padding:9px 8px;font-size:14px;color:inherit;text-decoration:none;border-radius:6px;cursor:pointer;word-break:break-word}
+.items a:hover,.items .li:hover{background:var(--hover)}
+.tile{-webkit-touch-callout:none;user-select:none}
+:root[data-theme="light"]{--strip:#f0f0f4;--tab:#fff;--bar:#f9f9fb;--field:#f0f0f4;--page:#fff;--tile:#e9e9ee;--search:#f0f0f4;--text:#15141a;--muted:#5b5b66;--hover:rgba(0,0,0,.08)}
+[data-theme=light] .tab,[data-theme=light] .tab.active,[data-theme=light] .ib,[data-theme=light] .tile,[data-theme=light] .custom,[data-theme=light] .vpn,[data-theme=light] .tab .fav,[data-theme=light] .tab .x,[data-theme=light] .newtab,[data-theme=light] .tabs .list{color:#15141a}
+[data-theme=light] .ib.dim{color:#a0a0aa}
+[data-theme=light] .url,[data-theme=light] .url input{color:#5b5b66}
+[data-theme=light] .url input:focus,[data-theme=light] .search input{color:#15141a}
+[data-theme=light] .url svg{stroke:#5b5b66}
+[data-theme=light] .tab.active{box-shadow:0 1px 3px rgba(0,0,0,.18)}
+[data-theme=light] .vpn{background:#e0e0e6}
+[data-theme=light] .vpn .dot{background:#5b5b66}
+[data-theme=light] .custom{background:#f0f0f4;border-color:#d7d7db}
+[data-theme=light] .tile:hover .ic,[data-theme=light] .welcome button:hover{background:#dcdce2}
+[data-theme=light] .welcome button{background:#e9e9ee}
+[data-theme=light] .search input::placeholder{color:#6b6b76}
+[data-theme=light] .pop,[data-theme=light] .modal{box-shadow:0 8px 30px rgba(0,0,0,.18)}
+@media (max-width:720px){
+  .info{top:8px;right:12px}.info b{font-size:18px}
+  .pop{right:8px}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="sunG" cx="50%" cy="46%" r="56%"><stop offset="0" stop-color="#f8aa0e"/><stop offset=".45" stop-color="#f58a1c"/><stop offset="1" stop-color="#f15a22"/></radialGradient>
+    <symbol id="solis" viewBox="0 0 100 100">
+      <mask id="sunM" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">
+        <circle cx="50" cy="50" r="50" fill="#fff"/>
+        <g fill="#000">
+          <polygon points="36,13.2 82,10.6 82,13.4"/>
+          <polygon points="0,30.4 47,33.2 0,34"/>
+          <polygon points="68.5,25.8 100,24.4 100,27"/>
+          <polygon points="55,45.2 100,43.2 100,46.2"/>
+          <polygon points="0,52.4 55,55.2 0,55.8"/>
+          <polygon points="50.4,67.2 100,65.1 100,67.8"/>
+          <polygon points="3,79.6 30,81.5 3,82.2"/>
+          <polygon points="28,93.4 43.5,94.4 28,95.4"/>
+          <polygon points="64,90.6 80,89.5 80,91.2"/>
+        </g>
+      </mask>
+      <circle cx="50" cy="50" r="50" fill="url(#sunG)" mask="url(#sunM)"/>
+    </symbol>
+  </defs>
+</svg>
+<div class="win">
+
+  <div class="tabs">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="tablist" id="tabList"></div>
+    <button class="newtab" id="newTabBtn" aria-label="New tab" title="New tab"><svg width="16" height="16" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg></button>
+    <div class="spacer"></div>
+    <button class="list" aria-label="Tüm sekmeler"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l5 5 5-5"/></svg></button>
+  </div>
+
+  <div class="toolbar">
+    <button class="ib" aria-label="Geri"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10H4M9 5l-5 5 5 5"/></svg></button>
+    <button class="ib dim opt" aria-label="İleri"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h12M11 5l5 5-5 5"/></svg></button>
+    <button class="ib opt" aria-label="Yenile" onclick="location.reload()"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10a6 6 0 1 1-2-4.5M16 3v4h-4"/></svg></button>
+    <button class="ib opt" aria-label="Ana sayfa"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3 9.5L10 3l7 6.5M5 8.5V17h4v-4.5h2V17h4V8.5"/></svg></button>
+
+    <form class="url" id="urlForm" autocomplete="off">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#c9c9d0" stroke-width="1.7" stroke-linecap="round"><circle cx="7.5" cy="7.5" r="5"/><path d="M11.5 11.5L16 16"/></svg>
+      <input id="urlInput" type="text" value="https://solis.browser/newtab" aria-label="Adres çubuğu" spellcheck="false">
+    </form>
+    <button class="ib hide-m" aria-label="Hesap"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="11" cy="11" r="9"/><circle cx="11" cy="9" r="3"/><path d="M5.5 17c1.2-2.4 3-3.4 5.5-3.4s4.300 1 5.500 3.400"/></svg></button>
+    <button class="ib hide-m" aria-label="Uzantılar"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3 8h2.500a2 2 0 1 1 4 0H12v3a2 2 0 1 1 0 4v2H3z"/><path d="M12 8h5v9h-5" /></svg></button>
+    <button class="ib" aria-label="Menü"><svg width="20" height="20" viewBox="0 0 20 20" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 5h14M3 10h14M3 15h14"/></svg></button>
+  </div>
+
+  <main class="page">
+    <div class="info" id="info"><div><b id="clk"></b><span id="dt"></span></div><button id="wx">Hava durumunu göster</button></div>
+    <div class="welcome" id="welcome">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#solis"/></svg>
+      <h2>Welcome to Solis</h2>
+      <p>Fast and simple browsing.</p>
+      <button id="welcomeNew">Open new tab</button>
+    </div>
+    <div class="hero">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#solis"/></svg>
+      <h1>Solis Browser</h1>
+    </div>
+
+    <form class="search" id="searchForm">
+      <svg width="18" height="18" viewBox="0 0 128 128" aria-hidden="true"><circle cx="64" cy="64" r="64" fill="#de5833"/><path d="M40 98c-8-24-4-52 14-66 12-9 30-8 38 6 7 12 6 30 1 44-4 11-8 16-14 20-12 3-28 2-39-4z" fill="#d5d7d8"/><path d="M42 96C34 72 38 46 54 34c12-8 28-6 36 6 6 10 6 26 1 40-4 10-8 15-14 19-12 3-27 1-35-3z" fill="#fff"/><path d="M92 54c10 2 16 6 18 10-6 5-18 6-30 3z" fill="#fdd20a"/><circle cx="66" cy="50" r="12" fill="#fff" stroke="#2d4f8e" stroke-width="0"/><circle cx="66" cy="50" r="8.500" fill="#2d4f8e"/><circle cx="68.500" cy="47" r="2.800" fill="#fff"/><path d="M52 100c8 8 22 8 30 2l-2 8c-8 6-22 6-30-2z" fill="#65bc46"/><path d="M58 104c6 4 14 4 20 1" fill="none" stroke="#43a244" stroke-width="3" stroke-linecap="round"/></svg>
+      <input id="q" type="text" autocomplete="off" placeholder="Search with DuckDuckGo or enter address" aria-label="Ara"><div class="sug" id="sug"></div>
+    </form>
+
+    <div class="tiles" id="tiles">
+      <a class="tile" href="https://www.amazon.com" target="_blank" rel="noopener"><div class="ic"><b style="background:#fff;color:#111;font:700 18px Arial,sans-serif;border-radius:4px;position:relative">a<i style="position:absolute;left:4px;right:4px;bottom:3px;height:2px;border-bottom:2px solid #ff9900;border-radius:0 0 8px 8px"></i></b></div><small>Amazon</small><em>Sponsored</em></a>
+      <a class="tile" href="https://www.expedia.com" target="_blank" rel="noopener"><div class="ic"><b style="background:#fcc72b;color:#1a2b6d"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#1a2b6d" stroke-width="2.200" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11L11 3M5 3h6v6"/></svg></b></div><small>Expedia</small><em>Sponsored</em></a>
+      <a class="tile" href="https://www.temu.com" target="_blank" rel="noopener"><div class="ic"><b style="background:#fb6a10;color:#fff;font:800 7px Arial,sans-serif;letter-spacing:-.2px">TEMU</b></div><small>Temu</small><em>Sponsored</em></a>
+      <a class="tile" href="https://www.wikipedia.org" target="_blank" rel="noopener"><div class="ic"><b style="background:#fff;color:#111;font:600 15px Georgia,serif;border-radius:50%">W</b></div><small>Wikipedia</small></a>
+      <a class="tile" href="https://www.youtube.com" target="_blank" rel="noopener"><div class="ic"><b style="background:#fff;border-radius:5px"><svg width="18" height="13" viewBox="0 0 18 13"><rect width="18" height="13" rx="3.500" fill="#f00"/><path d="M7 3.500v6l5-3z" fill="#fff"/></svg></b></div><small>YouTube</small></a>
+      <a class="tile" href="https://apnews.com" target="_blank" rel="noopener"><div class="ic"><b style="background:#fff;color:#111;font:800 10px Arial,sans-serif;border-radius:3px;position:relative;letter-spacing:-.3px">AP<i style="position:absolute;left:2px;right:2px;bottom:2px;height:2px;background:#e4002b"></i></b></div><small>AP News</small></a>
+      <a class="tile" href="https://www.reddit.com" target="_blank" rel="noopener"><div class="ic"><b style="background:#ff4500;border-radius:50%"><svg width="16" height="14" viewBox="0 0 16 14"><ellipse cx="8" cy="8.500" rx="6" ry="4.200" fill="#fff"/><circle cx="5.600" cy="8" r="1" fill="#ff4500"/><circle cx="10.400" cy="8" r="1" fill="#ff4500"/><circle cx="13" cy="4.500" r="1.200" fill="#fff"/><circle cx="8" cy="3" r="0" /><path d="M5.500 10.500c1.500 1 3.500 1 5 0" stroke="#ff4500" stroke-width=".8" fill="none" stroke-linecap="round"/></svg></b></div><small>Reddit</small></a>
+      <a class="tile" href="#" id="addBtn"><div class="ic"><svg width="14" height="14" viewBox="0 0 14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="border-radius:0"><path d="M7 1v12M1 7h12"/></svg></div><small>Add Shortcut</small></a>
+    </div>
+
+    <button class="custom" id="customBtn">Customize
+      <svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.600" stroke-linejoin="round"><path d="M11 2l3 3-8.500 8.500L2 14l.5-3.500z"/></svg>
+    </button>
+  </main>
+  <div class="pop" id="pop"></div><div class="pop ctx" id="ctx"></div>
+  <div class="ov" id="ov"><div class="modal" id="modal"></div></div>
+</div>
+
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var S={get:function(k,d){try{var v=localStorage.getItem('solis.'+k);return v?JSON.parse(v):d}catch(e){return d}},
+       set:function(k,v){try{localStorage.setItem('solis.'+k,JSON.stringify(v))}catch(e){}}};
+function esc(t){return String(t).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+var page=document.querySelector('.page'),pop=$('pop'),ov=$('ov'),mod=$('modal'),ctx=$('ctx');
+
+/* ---------- Ayarlar ve tema ---------- */
+var cfg=Object.assign({theme:'dark',bg:'',tiles:true,info:true,weather:false},S.get('cfg',{}));
+function applyCfg(){
+  document.documentElement.dataset.theme=cfg.theme;
+  page.style.setProperty('--pagebg',cfg.theme==='dark'&&cfg.bg?cfg.bg:'');
+  page.classList.toggle('hide-tiles',!cfg.tiles);
+  page.classList.toggle('hide-info',!cfg.info);
+  S.set('cfg',cfg);
+}
+applyCfg();
+
+/* ---------- Açılır pencereler ---------- */
+function closePop(){pop.classList.remove('open')}
+function showPop(html,bind){pop.onclick=null;pop.innerHTML=html;pop.classList.add('open');if(bind)bind()}
+function closeModal(){ov.classList.remove('open')}
+function showModal(html,bind){mod.onclick=null;mod.innerHTML=html;ov.classList.add('open');if(bind)bind()}
+document.addEventListener('click',function(e){
+  if(!pop.contains(e.target)&&!e.target.closest('[data-pop]'))closePop();
+  if(!ctx.contains(e.target))ctx.classList.remove('open');
+});
+ov.addEventListener('click',function(e){if(e.target===ov)closeModal()});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){closePop();closeModal();ctx.classList.remove('open')}});
+function sw(on){return '<button class="sw'+(on?' on':'')+'" role="switch" aria-checked="'+on+'"></button>'}
+
+/* ---------- Arama (DuckDuckGo) ---------- */
+var URLRE=/^(https?:\/\/)?([\w-]+\.)+[a-z]{2,}(\/.*)?$/i;
+var hist=S.get('hist',[]);
+function go(v){
+  v=v.trim();if(!v)return;var u;
+  if(URLRE.test(v))u=/^https?:\/\//i.test(v)?v:'https://'+v;
+  else{hist=[v].concat(hist.filter(function(x){return x!==v})).slice(0,30);S.set('hist',hist);u='https://duckduckgo.com/?q='+encodeURIComponent(v)}
+  try{window.top.location.href=u}catch(_){window.location.href=u}
+}
+var qi=$('q'),sug=$('sug'),rows=[],sel=-1,timer,ctl;
+var SI='<svg width="12" height="12" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="7.500" cy="7.500" r="5"/><path d="M11.500 11.500L16 16"/></svg>';
+function drawSug(){
+  if(!rows.length){sug.classList.remove('open');return}
+  sug.innerHTML=rows.map(function(r,i){return '<div data-i="'+i+'"'+(i===sel?' class="sel"':'')+'>'+SI+'<span>'+esc(r)+'</span></div>'}).join('');
+  sug.classList.add('open');
+}
+function localMatches(v){var l=v.toLowerCase();return hist.filter(function(h){return h.toLowerCase().indexOf(l)>-1}).slice(0,3)}
+function dedupe(a,n){var seen={};return a.filter(function(x){if(!x||seen[x])return false;return seen[x]=true}).slice(0,n)}
+function suggest(){
+  var v=qi.value.trim();sel=-1;
+  if(!v){rows=hist.slice(0,5);drawSug();return}
+  rows=dedupe([v].concat(localMatches(v)),7);drawSug();
+  clearTimeout(timer);
+  timer=setTimeout(function(){
+    if(ctl)ctl.abort();
+    ctl=window.AbortController?new AbortController():null;
+    fetch('https://duckduckgo.com/ac/?type=list&q='+encodeURIComponent(v),ctl?{signal:ctl.signal}:{})
+      .then(function(r){return r.json()})
+      .then(function(d){
+        var rem=((d&&d[1])||[]).map(function(x){return typeof x==='string'?x:x.phrase});
+        if(qi.value.trim()!==v)return;
+        rows=dedupe([v].concat(localMatches(v),rem),7);sel=-1;drawSug();
+      }).catch(function(){});
+  },180);
+}
+qi.addEventListener('input',suggest);
+qi.addEventListener('focus',suggest);
+qi.addEventListener('blur',function(){setTimeout(function(){sug.classList.remove('open')},150)});
+qi.addEventListener('keydown',function(e){
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    if(!rows.length)return;e.preventDefault();
+    sel=e.key==='ArrowDown'?(sel+1)%rows.length:(sel<=0?rows.length-1:sel-1);
+    qi.value=rows[sel];drawSug();
+  }else if(e.key==='Escape'){sug.classList.remove('open')}
+});
+sug.addEventListener('mousedown',function(e){
+  var d=e.target.closest('[data-i]');if(!d)return;e.preventDefault();go(rows[+d.dataset.i]);
+});
+sug.addEventListener('touchstart',function(e){
+  var d=e.target.closest('[data-i]');if(!d)return;e.preventDefault();go(rows[+d.dataset.i]);
+},{passive:false});
+$('searchForm').addEventListener('submit',function(e){e.preventDefault();go(sel>-1&&rows[sel]?rows[sel]:qi.value)});
+$('urlForm').addEventListener('submit',function(e){e.preventDefault();go($('urlInput').value)});
+
+/* ---------- Kısayollar ---------- */
+var tiles=$('tiles'),addBtn=$('addBtn'),pressed=false;
+var sc=S.get('sc',null);
+if(!sc){
+  sc=[].map.call(tiles.querySelectorAll('.tile[target]'),function(a){
+    return{name:a.querySelector('small').textContent,url:a.href,icon:a.querySelector('.ic').innerHTML,sp:!!a.querySelector('em'),b:1};
+  });
+}
+var DEFAULT_SC=JSON.parse(JSON.stringify(sc));
+function letterIcon(n){return '<b style="background:#6b6a78;color:#fff;font-size:13px">'+esc(n.charAt(0).toUpperCase())+'</b>'}
+function renderSc(){
+  [].forEach.call(tiles.querySelectorAll('.tile[target]'),function(a){a.remove()});
+  sc.forEach(function(it,i){
+    var a=document.createElement('a');
+    a.className='tile';a.href=it.url;a.target='_blank';a.rel='noopener';a.dataset.i=i;
+    a.innerHTML='<div class="ic">'+(it.icon||letterIcon(it.name))+'</div><small>'+esc(it.name)+'</small>'+(it.sp?'<em>Sponsored</em>':'');
+    tiles.insertBefore(a,addBtn);
+  });
+}
+function openCtx(x,y,i){
+  ctx.innerHTML='<button class="mi" data-a="e">Düzenle</button><button class="mi" data-a="d">Sil</button>';
+  ctx.style.left=Math.max(8,Math.min(x,window.innerWidth-180))+'px';
+  ctx.style.top=Math.max(8,Math.min(y,window.innerHeight-100))+'px';
+  ctx.classList.add('open');
+  ctx.onclick=function(e){
+    var b=e.target.closest('[data-a]');if(!b)return;
+    ctx.classList.remove('open');
+    if(b.dataset.a==='e')shortcutForm(i);else{sc.splice(i,1);S.set('sc',sc);renderSc()}
+  };
+}
+tiles.addEventListener('contextmenu',function(e){
+  var a=e.target.closest('.tile[data-i]');if(!a)return;
+  e.preventDefault();openCtx(e.clientX,e.clientY,+a.dataset.i);
+});
+var lp;
+tiles.addEventListener('touchstart',function(e){
+  var a=e.target.closest('.tile[data-i]');if(!a)return;var t=e.touches[0];
+  lp=setTimeout(function(){pressed=true;openCtx(t.clientX,t.clientY,+a.dataset.i)},550);
+},{passive:true});
+['touchend','touchmove','touchcancel'].forEach(function(n){tiles.addEventListener(n,function(){clearTimeout(lp)},{passive:true})});
+tiles.addEventListener('click',function(e){if(pressed){e.preventDefault();pressed=false}},true);
+function shortcutForm(i){
+  var it=i>=0?sc[i]:{name:'',url:''};
+  showModal('<h2>'+(i>=0?'Kısayolu düzenle':'Kısayol ekle')+'</h2><label>Ad</label><input id="f_n" type="text" value="'+esc(it.name)+'"><label>Adres</label><input id="f_u" type="text" placeholder="ornek.com" value="'+esc(it.url)+'"><div class="btns"><button class="btn" id="f_c">İptal</button><button class="btn pri" id="f_s">Kaydet</button></div>',function(){
+    $('f_c').onclick=closeModal;
+    $('f_s').onclick=function(){
+      var u=$('f_u').value.trim(),n=$('f_n').value.trim(),host;
+      if(!u){$('f_u').focus();return}
+      if(!/^https?:\/\//i.test(u))u='https://'+u;
+      try{host=new URL(u).hostname.replace(/^www\./,'')}catch(e){$('f_u').focus();return}
+      n=n||host.split('.')[0];
+      if(i>=0){sc[i].name=n;sc[i].url=u}else sc.push({name:n,url:u});
+      S.set('sc',sc);renderSc();closeModal();
+    };
+    $('f_n').focus();
+  });
+}
+addBtn.addEventListener('click',function(e){e.preventDefault();shortcutForm(-1)});
+renderSc();
+
+/* ---------- Özelleştir ---------- */
+var BGS=[['','Varsayılan','#1c1b22'],['#0c1220','Gece mavisi','#0c1220'],['#000000','Siyah','#000000'],['#241a33','Mor','#241a33'],['#14261f','Orman','#14261f'],['#2a1a12','Kahve','#2a1a12']];
+function openCustomize(){
+  closePop();
+  showModal('<h2>Özelleştir</h2>'
+    +'<label>Tema</label><div class="btns" style="justify-content:flex-start;margin-top:0"><button class="btn'+(cfg.theme==='dark'?' pri':'')+'" data-t="dark">Koyu</button><button class="btn'+(cfg.theme==='light'?' pri':'')+'" data-t="light">Açık</button></div>'
+    +'<label>Arka plan'+(cfg.theme==='light'?' (yalnızca koyu temada)':'')+'</label><div class="swatches">'+BGS.map(function(b){return '<button title="'+b[1]+'" data-bg="'+b[0]+'" class="'+(cfg.bg===b[0]?'sel':'')+'" style="background:'+b[2]+'"></button>'}).join('')+'</div>'
+    +'<div class="row" data-k="tiles"><span>Kısayolları göster</span>'+sw(cfg.tiles)+'</div>'
+    +'<div class="row" data-k="info"><span>Saat, tarih ve hava durumu</span>'+sw(cfg.info)+'</div>'
+    +'<div class="row"><span>Arama geçmişi<small>'+hist.length+' kayıt</small></span><button class="btn" id="c_h">Temizle</button></div>'
+    +'<div class="btns"><button class="btn" id="c_r">Kısayolları sıfırla</button><button class="btn pri" id="c_x">Kapat</button></div>',
+  function(){
+    mod.onclick=function(e){
+      var t=e.target.closest('[data-t]'),b=e.target.closest('[data-bg]'),r=e.target.closest('[data-k]');
+      if(t){cfg.theme=t.dataset.t;applyCfg();openCustomize()}
+      else if(b){cfg.bg=b.dataset.bg;applyCfg();openCustomize()}
+      else if(r){cfg[r.dataset.k]=!cfg[r.dataset.k];applyCfg();openCustomize()}
+      else if(e.target.id==='c_h'){hist=[];S.set('hist',hist);openCustomize()}
+      else if(e.target.id==='c_r'){sc=JSON.parse(JSON.stringify(DEFAULT_SC));S.set('sc',sc);renderSc()}
+      else if(e.target.id==='c_x')closeModal();
+    };
+  });
+}
+$('customBtn').addEventListener('click',openCustomize);
+
+/* ---------- Hesap, uzantılar, menü ---------- */
+var user=S.get('user',false);
+function accountPop(){
+  showPop('<div class="row"><div class="avatar">'+(user?'S':'M')+'</div><div style="flex:1"><b>'+(user?'Solis Kullanıcısı':'Misafir')+'</b><small>'+(user?'Eşitleme açık (demo)':'Giriş yapılmadı')+'</small></div></div><div class="sep"></div><button class="mi" id="a_b">'+(user?'Çıkış yap':'Giriş yap (demo)')+'</button>',function(){
+    $('a_b').onclick=function(){user=!user;S.set('user',user);accountPop()};
+  });
+}
+function extPop(){showPop('<h3>Uzantılar</h3><p>Henüz yüklü uzantı yok.</p>')}
+function listModal(title,items,empty,extra){
+  showModal('<h2>'+title+'</h2><div class="items">'+(items.length?items.join(''):'<p>'+empty+'</p>')+'</div><div class="btns">'+(extra||'')+'<button class="btn pri" id="l_x">Kapat</button></div>',function(){
+    $('l_x').onclick=closeModal;
+    mod.onclick=function(e){
+      var li=e.target.closest('[data-q]');
+      if(li){go(li.dataset.q)}
+      else if(e.target.id==='l_c'){hist=[];S.set('hist',hist);historyModal()}
+    };
+  });
+}
+function historyModal(){
+  listModal('Geçmiş',hist.map(function(h){return '<div class="li" data-q="'+esc(h)+'">'+esc(h)+'</div>'}),'Henüz arama geçmişi yok.',hist.length?'<button class="btn" id="l_c">Geçmişi temizle</button>':'');
+}
+function bookmarksModal(){
+  listModal('Yer imleri',sc.map(function(s){return '<a href="'+esc(s.url)+'" target="_blank" rel="noopener">'+esc(s.name)+'<br><small style="color:var(--muted)">'+esc(s.url)+'</small></a>'}),'Yer imi yok.');
+}
+function menuPop(){
+  showPop('<button class="mi" data-m="new">Yeni sekme</button><button class="mi" data-m="hist">Geçmiş</button><button class="mi" data-m="bm">Yer imleri</button><div class="sep"></div>'
+    +'<button class="mi" data-m="theme">'+(cfg.theme==='dark'?'Açık temaya geç':'Koyu temaya geç')+'</button><button class="mi" data-m="set">Ayarlar</button><div class="sep"></div><button class="mi" data-m="about">Solis Browser hakkında</button>',function(){
+    pop.onclick=function(e){
+      var b=e.target.closest('[data-m]');if(!b)return;var m=b.dataset.m;closePop();
+      if(m==='new'&&window.solisNewTab)window.solisNewTab();
+      else if(m==='hist')historyModal();
+      else if(m==='bm')bookmarksModal();
+      else if(m==='theme'){cfg.theme=cfg.theme==='dark'?'light':'dark';applyCfg()}
+      else if(m==='set')openCustomize();
+      else if(m==='about')showModal('<h2>Solis Browser</h2><p>Bu, Solis Browser yeni sekme sayfasının demo sürümüdür.</p><div class="btns"><button class="btn pri" id="ab_x">Kapat</button></div>',function(){$('ab_x').onclick=closeModal});
+    };
+  });
+}
+var acc=document.querySelector('[aria-label="Hesap"]'),ext=document.querySelector('[aria-label="Uzantılar"]'),mnu=document.querySelector('[aria-label="Menü"]');
+[acc,ext,mnu].forEach(function(b){b.setAttribute('data-pop','1')});
+acc.addEventListener('click',accountPop);ext.addEventListener('click',extPop);mnu.addEventListener('click',menuPop);
+
+/* ---------- Saat, tarih, hava durumu ---------- */
+function tick(){
+  var d=new Date();
+  $('clk').textContent=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  $('dt').textContent=d.toLocaleDateString([],{weekday:'long',day:'numeric',month:'long'});
+}
+tick();setInterval(tick,15000);
+var wx=$('wx');
+function wIcon(c){return c===0?'☀️':c<3?'🌤️':c===3?'☁️':c<50?'🌫️':c<70?'🌧️':c<80?'❄️':c<90?'🌦️':'⛈️'}
+function loadWx(){
+  if(!navigator.geolocation){wx.textContent='Hava durumu yok';return}
+  wx.textContent='Hava durumu…';
+  navigator.geolocation.getCurrentPosition(function(p){
+    fetch('https://api.open-meteo.com/v1/forecast?latitude='+p.coords.latitude+'&longitude='+p.coords.longitude+'&current=temperature_2m,weather_code')
+      .then(function(r){return r.json()})
+      .then(function(j){wx.textContent=wIcon(j.current.weather_code)+' '+Math.round(j.current.temperature_2m)+'°';cfg.weather=true;applyCfg()})
+      .catch(function(){wx.textContent='Hava durumu alınamadı'});
+  },function(){cfg.weather=false;applyCfg();wx.textContent='Konum izni verilmedi'},{timeout:10000});
+}
+if(cfg.weather)loadWx();
+wx.addEventListener('click',loadWx);
+})();
+</script>
+<script>
+(function(){
+  var tabList=document.getElementById('tabList'),page=document.querySelector('.page'),
+      urlInput=document.getElementById('urlInput'),q=document.getElementById('q');
+  var SUN='<svg width="16" height="16" viewBox="0 0 100 100"><use href="#solis"/></svg>';
+  var X='<svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg>';
+  var saved=null;try{saved=JSON.parse(localStorage.getItem('solis.tabs'))}catch(e){}
+  var tabs=saved&&saved.tabs&&saved.tabs.length?saved.tabs:[{id:1,type:'welcome',title:'Welcome to Solis'},{id:2,type:'new',title:'New Tab'}],
+      active=saved&&saved.active||2,nextId=saved&&saved.nextId||3;
+  if(!tabs.some(function(t){return t.id===active}))active=tabs[0].id;
+
+  function current(){return tabs.filter(function(t){return t.id===active})[0]}
+  function render(){
+    tabList.innerHTML='';
+    tabs.forEach(function(t){
+      var el=document.createElement('div');
+      el.className='tab'+(t.id===active?' active':'');
+      el.setAttribute('role','tab');
+      el.innerHTML='<div class="fav">'+(t.type==='welcome'?'W':SUN)+'</div><span></span><button class="x" aria-label="Close tab" title="Close tab">'+X+'</button>';
+      el.querySelector('span').textContent=t.title;
+      el.addEventListener('click',function(){active=t.id;render()});
+      el.querySelector('.x').addEventListener('click',function(e){e.stopPropagation();closeTab(t.id)});
+      tabList.appendChild(el);
+      if(t.id===active) el.scrollIntoView({block:'nearest',inline:'nearest'});
+    });
+    var c=current(), isWelcome=c.type==='welcome';
+    page.classList.toggle('is-welcome',isWelcome);
+    urlInput.value='https://solis.browser/'+(isWelcome?'welcome':'newtab');
+    if(!isWelcome) q.value='';
+    try{localStorage.setItem('solis.tabs',JSON.stringify({tabs:tabs,active:active,nextId:nextId}))}catch(e){}
+  }
+  function openTab(){tabs.push({id:nextId,type:'new',title:'New Tab'});active=nextId++;render()}
+  function closeTab(id){
+    var i=tabs.map(function(t){return t.id}).indexOf(id);
+    if(i<0) return;
+    tabs.splice(i,1);
+    if(!tabs.length){openTab();return}
+    if(id===active) active=tabs[Math.min(i,tabs.length-1)].id;
+    render();
+  }
+  document.getElementById('newTabBtn').addEventListener('click',openTab);
+  document.getElementById('welcomeNew').addEventListener('click',openTab);
+  window.solisNewTab=openTab;
+  render();
+})();
+</script>
+</body>
+</html>

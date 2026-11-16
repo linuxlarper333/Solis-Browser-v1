@@ -8,6 +8,9 @@
 
 **Solis Browser**, 11 yaşındaki bağımsız bir geliştirici (Maqs) tarafından geliştirilen; **gizlilik**, **hız** ve **günlük kullanım** odaklı hafif bir tarayıcı arayüzüdür. Chromium tabanı kullanmaz ve kullanıcı verilerini toplamaz.
 
+### 🖼️ Ekran Görüntüsü / Arayüz
+![Solis Browser Arayüzü](https://cdn.phototourl.com/anon/2026-11-16-5ae58d2a-bcf5-4f7d-acdd-8f212a291af8.jpg)
+
 ### ✨ Öne Çıkan Özellikler
 * **⚡ Yüksek Hız:** Yapılan yan yana hız testlerinde aramaları **0.45 saniyede** tamamlayarak standart tarayıcılara göre 2 kattan fazla hız sunar.
 * **🛡️ Sıfır Kayıt (No-Log) Gizliliği:** Tüm aramalar doğrudan **DuckDuckGo** üzerinden yapılır; arama geçmişiniz veya kişisel bilgileriniz dış sunuculara gönderilmez.
@@ -24,8 +27,13 @@
 | **Varsayılan Arama Motoru** | **DuckDuckGo** | Google |
 | **Takip Kodları** | **Arındırılmış** | Mevcut |
 
+### 💬 Topluluk Geri Bildirimleri
+Projeyi inceleyen kullanıcılardan gelen olumlu yorumlar ve geri bildirimler:
+
+![Topluluk Yorumları](https://cdn.phototourl.com/anon/2026-11-16-7a747672-17df-4497-a9cf-6dce88f64ec8.jpg)
+
 ### 🚀 Nasıl Kullanılır ve İncelenir?
-* **Kaynak Kodu İnceleme:** Depodaki `Source-Code` dosyasına tıklayarak tüm HTML, CSS ve JavaScript kaynak kodlarını açık kaynak olarak inceleyebilirsiniz.
+* **Kaynak Kodu İnceleme:** Depodaki `solis-browser-kod.txt` dosyasına tıklayarak tüm HTML, CSS ve JavaScript kaynak kodlarını açık kaynak olarak inceleyebilirsiniz.
 * **Tarayıcıda Çalıştırma:** `index.html` dosyasını cihazınıza indirip herhangi bir tarayıcıda açabilir veya canlı demo bağlantısını kullanabilirsiniz.
 
 ---
@@ -33,6 +41,9 @@
 ## 🇬🇧 English
 
 **Solis Browser** is a lightweight browser interface developed by an 11-year-old independent developer (Maqs), focused on **privacy**, **speed**, and **everyday browsing**. It does not use a Chromium base and never collects user data.
+
+### 🖼️ Screenshot / Interface
+![Solis Browser Interface](https://cdn.phototourl.com/anon/2026-11-16-5ae58d2a-bcf5-4f7d-acdd-8f212a291af8.jpg)
 
 ### ✨ Key Features
 * **⚡ Blazing Fast:** Completes searches in **0.45 seconds** in side-by-side speed tests, delivering over 2x faster response times than standard browsers.
@@ -49,6 +60,11 @@
 | **User Logging** | **No Logs** | Logged |
 | **Default Search Engine** | **DuckDuckGo** | Google |
 | **Tracking Scripts** | **Stripped / Clean** | Present |
+
+### 💬 Community Feedback
+Positive reviews and feedback from users who tested the project:
+
+![Community Feedback](https://cdn.phototourl.com/anon/2026-11-16-7a747672-17df-4497-a9cf-6dce88f64ec8.jpg)
 
 ### 🚀 How to Use & Inspect
 * **Inspect Source Code:** Click on `solis-browser-kod.txt` in this repository to view the complete open-source HTML, CSS, and JavaScript code.
